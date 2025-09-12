@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stockfish Chess (Web)</title>
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+      background: #fff;
+      overscroll-behavior: contain;
+    }
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      margin: 0;
+      padding: 0;
+    }
+    #board {
+      width: 100vw;
+      max-width: 98vw;
+      height: 100vw;
+      max-height: 98vw;
+      min-width: 320px;
+      min-height: 320px;
+      box-sizing: border-box;
+      touch-action: none;
+      margin-bottom: 1em;
+      background: #eee;
+    }
+    #output { white-space: pre; background: #f0f0f0; padding: 1em; border-radius: 5px; }
+    @media (max-width: 600px) {
+      #board {
+        width: 98vw;
+        height: 98vw;
+        min-width: 0;
+        min-height: 0;
+      }
+    }
+  </style>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.css" />
+</head>
+<body>
+  <h1>Stockfish Chess (Web)</h1>
+  <div id="board"></div>
+  <label for="skillLevel">Skill Level:</label>
+  <select id="skillLevel">
+    <option value="1">1 (Beginner)</option>
+    <option value="2">2</option>
+    <option value="3">3</option>
+    <option value="4">4</option>
+    <option value="5">5</option>
+    <option value="6">6</option>
+    <option value="7">7</option>
+    <option value="8">8</option>
+    <option value="9">9</option>
+    <option value="10">10 (Strong)</option>
+  </select>
+  <button id="startStockfishBtn" onclick="startStockfish()">Start Stockfish</button>
+  <button id="getMoveBtn" onclick="getBestMove()">Get Best Move</button>
+  <button id="playVsEngineBtn" onclick="playVsEngine()">Play vs Stockfish</button>
+  <div id="output" style="margin-top:1em;"></div>
+  <div id="engineAnalysis" style="margin-top:1em; background:#e8f4ff; padding:0.5em; border-radius:5px;"></div>
+  <script>
+    // Prevent scrolling when touching the chessboard
+    document.addEventListener('touchmove', function(e) {
+      if (e.target.closest('#board')) {
+        e.preventDefault();
+      }
+    }, { passive: false });
+  </script>
+  <script src="main.js"></script>
+</body>
+</html>
