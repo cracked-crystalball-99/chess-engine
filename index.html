@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Stockfish Chess (Web)</title>
   <style>
     html, body {
@@ -11,16 +11,22 @@
       font-family: Arial, sans-serif;
       background: #f5f5f5;
       overflow-x: hidden;
+      height: 100%;
+      position: fixed;
+      width: 100%;
       -webkit-text-size-adjust: 100%;
+      -webkit-overflow-scrolling: touch;
     }
     
     .container {
       max-width: 800px;
       margin: 0 auto;
       padding: 10px;
-      min-height: 100vh;
+      height: 100vh;
       display: flex;
       flex-direction: column;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
     }
     
     h1 {
@@ -38,6 +44,7 @@
       border-radius: 8px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.1);
       padding: 10px;
+      flex-shrink: 0;
     }
     
     #board {
@@ -128,6 +135,8 @@
       padding: 15px;
       margin-bottom: 15px;
       box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      flex: 1;
+      min-height: 0;
     }
     
     #output {
@@ -137,9 +146,10 @@
       border-radius: 4px;
       font-family: monospace;
       font-size: 12px;
-      max-height: 200px;
+      max-height: 150px;
       overflow-y: auto;
       border: 1px solid #ddd;
+      -webkit-overflow-scrolling: touch;
     }
     
     #engineAnalysis {
@@ -170,6 +180,7 @@
     @media (max-width: 600px) {
       .container {
         padding: 5px;
+        height: 100vh;
       }
       
       h1 {
@@ -180,10 +191,12 @@
       .board-container {
         padding: 5px;
         margin-bottom: 10px;
+        max-width: 95vw;
       }
       
       .controls {
         padding: 10px;
+        flex-shrink: 0;
       }
       
       button {
@@ -199,6 +212,16 @@
       button {
         width: 100%;
         min-width: auto;
+      }
+      
+      #output {
+        max-height: 100px;
+        font-size: 11px;
+      }
+      
+      .output-section {
+        padding: 10px;
+        margin-bottom: 5px;
       }
     }
   </style>
@@ -248,16 +271,24 @@
   <script>
     // Enhanced mobile touch handling
     document.addEventListener('DOMContentLoaded', function() {
-      // Prevent scrolling and zooming on the chessboard
+      // Prevent unwanted scrolling and zooming
       document.addEventListener('touchmove', function(e) {
-        if (e.target.closest('.board-container')) {
+        // Only prevent if touching the chessboard itself
+        if (e.target.closest('#board, .piece-417db')) {
           e.preventDefault();
         }
       }, { passive: false });
       
-      // Prevent double-tap zoom on buttons and board
+      // Prevent double-tap zoom on buttons and board pieces
       document.addEventListener('touchend', function(e) {
-        if (e.target.closest('.board-container, button')) {
+        if (e.target.closest('#board, button, .piece-417db')) {
+          e.preventDefault();
+        }
+      }, { passive: false });
+      
+      // Prevent pull-to-refresh on mobile
+      document.addEventListener('touchstart', function(e) {
+        if (e.touches.length > 1) {
           e.preventDefault();
         }
       }, { passive: false });
