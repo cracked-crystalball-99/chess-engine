@@ -38,7 +38,37 @@ function setSkillLevel() {
 
 function updateEngineAnalysis(infoLine) {
   if (!infoLine.includes(' pv ')) return;
-  document.getElementById('engineAnalysis').textContent = infoLine;
+  
+  // Parse the engine output for better display
+  const analysisEl = document.getElementById('engineAnalysis');
+  let displayText = '';
+  
+  // Extract depth, score, and principal variation
+  const depthMatch = infoLine.match(/depth (\d+)/);
+  const scoreMatch = infoLine.match(/score (cp|mate) (-?\d+)/);
+  const pvMatch = infoLine.match(/pv (.+?)(?:\s|$)/);
+  
+  if (depthMatch) {
+    displayText += `Depth: ${depthMatch[1]} `;
+  }
+  
+  if (scoreMatch) {
+    const scoreType = scoreMatch[1];
+    const scoreValue = scoreMatch[2];
+    if (scoreType === 'cp') {
+      const pawns = (parseInt(scoreValue) / 100).toFixed(1);
+      displayText += `Eval: ${pawns > 0 ? '+' : ''}${pawns} `;
+    } else {
+      displayText += `Mate in ${scoreValue} `;
+    }
+  }
+  
+  if (pvMatch) {
+    const moves = pvMatch[1].split(' ').slice(0, 6); // Show first 6 moves
+    displayText += `\nBest line: ${moves.join(' ')}`;
+  }
+  
+  analysisEl.textContent = displayText.trim();
 }
 
 function playVsEngine() {
@@ -116,41 +146,130 @@ function getBestMove() {
   stockfish.postMessage('go depth 15');
 }
 
+// Enhanced mobile support variables
+let selectedSquare = null;
+let isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+// Mobile-friendly piece selection
+function onMouseDownSquare(square, piece) {
+  if (!isMobile) return true; // Use default behavior on desktop
+  
+  // Mobile touch logic
+  if (selectedSquare === null) {
+    if (piece !== false && ((game.turn() === 'w' && piece.charAt(0) === 'w') || 
+                            (game.turn() === 'b' && piece.charAt(0) === 'b'))) {
+      selectedSquare = square;
+      // Highlight selected square
+      highlightSquare(square);
+      return false; // Prevent default drag
+    }
+  } else {
+    // Try to make move
+    const move = game.move({
+      from: selectedSquare,
+      to: square,
+      promotion: 'q'
+    });
+    
+    if (move === null) {
+      // Invalid move, try selecting new piece
+      selectedSquare = null;
+      clearHighlights();
+      if (piece !== false && ((game.turn() === 'w' && piece.charAt(0) === 'w') || 
+                              (game.turn() === 'b' && piece.charAt(0) === 'b'))) {
+        selectedSquare = square;
+        highlightSquare(square);
+      }
+    } else {
+      // Valid move made
+      selectedSquare = null;
+      clearHighlights();
+      board.position(game.fen());
+      
+      // Trigger engine move if playing vs engine
+      if (playVsEngineActive) {
+        const turn = game.turn();
+        if ((userColor === 'w' && turn === 'b') || (userColor === 'b' && turn === 'w')) {
+          setTimeout(() => {
+            const fen = game.fen();
+            stockfish.postMessage('position fen ' + fen);
+            stockfish.postMessage('go depth 15');
+          }, 250);
+        }
+      }
+    }
+  }
+  return false;
+}
+
+function highlightSquare(square) {
+  const squareEl = document.querySelector(`[data-square="${square}"]`);
+  if (squareEl) {
+    squareEl.style.backgroundColor = '#a0d0ff';
+    squareEl.style.boxShadow = 'inset 0 0 10px rgba(0,100,255,0.5)';
+  }
+}
+
+function clearHighlights() {
+  const squares = document.querySelectorAll('[data-square]');
+  squares.forEach(square => {
+    square.style.backgroundColor = '';
+    square.style.boxShadow = '';
+  });
+}
+
 window.onload = function() {
   game = new Chess();
-  board = Chessboard('board', {
-    draggable: true,
+  
+  const boardConfig = {
+    draggable: !isMobile, // Disable dragging on mobile
     dropOffBoard: 'snapback',
     position: 'start',
     onDrop: onDrop,
+    pieceTheme: 'img/chesspieces/wikipedia/{piece}.png',
+    showNotation: true,
+    showErrors: false,
+    sparePieces: false,
+    appearSpeed: 'fast',
+    trashSpeed: 'fast',
+    snapSpeed: 200,
+    snapbackSpeed: 400,
+    moveSpeed: 200
+  };
+  
+  // Add mobile-specific handlers
+  if (isMobile) {
+    boardConfig.onMouseDownSquare = onMouseDownSquare;
+  }
+  
+  board = Chessboard('board', boardConfig);
+  
+  // Responsive board sizing
+  function resizeBoard() {
+    if (board) {
+      board.resize();
+    }
+  }
+  
+  window.addEventListener('resize', resizeBoard);
+  window.addEventListener('orientationchange', function() {
+    setTimeout(resizeBoard, 100);
   });
+  
   document.getElementById('getMoveBtn').disabled = true;
   document.getElementById('playVsEngineBtn').disabled = false;
   document.getElementById('skillLevel').disabled = false;
   document.getElementById('skillLevel').addEventListener('change', setSkillLevel);
-  startStockfish();
-
-  // Mobile touch: prevent scroll and improve drag
-  const boardEl = document.getElementById('board');
-  if (boardEl) {
-    let touchStartY = 0;
-    let touchStartX = 0;
-    boardEl.addEventListener('touchstart', function(e) {
-      if (e.touches.length === 1) {
-        touchStartY = e.touches[0].clientY;
-        touchStartX = e.touches[0].clientX;
-      }
-    }, { passive: false });
-    boardEl.addEventListener('touchmove', function(e) {
-      if (e.touches.length === 1) {
-        e.preventDefault();
-        // Optionally, you can add custom drag logic here
-      }
-    }, { passive: false });
-    boardEl.addEventListener('touchend', function(e) {
-      // Optionally, handle touch end for custom piece drop
-    }, { passive: false });
+  
+  // Show mobile instructions if on mobile device
+  if (isMobile) {
+    const mobileInstructions = document.getElementById('mobile-instructions');
+    if (mobileInstructions) {
+      mobileInstructions.style.display = 'block';
+    }
   }
+  
+  startStockfish();
 };
 
 // Note: You need to provide stockfish.js and stockfish.wasm in this folder.

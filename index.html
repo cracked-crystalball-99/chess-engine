@@ -6,41 +6,199 @@
   <title>Stockfish Chess (Web)</title>
   <style>
     html, body {
-      height: 100%;
       margin: 0;
       padding: 0;
       font-family: Arial, sans-serif;
-      background: #fff;
-      overscroll-behavior: contain;
+      background: #f5f5f5;
+      overflow-x: hidden;
+      -webkit-text-size-adjust: 100%;
     }
-    body {
+    
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 10px;
       min-height: 100vh;
       display: flex;
       flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-      margin: 0;
-      padding: 0;
     }
+    
+    h1 {
+      text-align: center;
+      margin: 10px 0;
+      font-size: 1.5rem;
+    }
+    
+    .board-container {
+      position: relative;
+      width: 100%;
+      max-width: 500px;
+      margin: 0 auto 20px;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      padding: 10px;
+    }
+    
     #board {
-      width: 100vw;
-      max-width: 98vw;
-      height: 100vw;
-      max-height: 98vw;
-      min-width: 320px;
-      min-height: 320px;
-      box-sizing: border-box;
+      width: 100% !important;
+      height: auto !important;
+      position: relative;
       touch-action: none;
-      margin-bottom: 1em;
-      background: #eee;
+      -webkit-user-select: none;
+      user-select: none;
     }
-    #output { white-space: pre; background: #f0f0f0; padding: 1em; border-radius: 5px; }
+    
+    .controls {
+      background: #fff;
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 15px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+    
+    .controls label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    
+    .controls select {
+      width: 100%;
+      max-width: 200px;
+      padding: 8px;
+      margin-bottom: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 16px;
+    }
+    
+    .button-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+    }
+    
+    button {
+      padding: 12px 16px;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.2s;
+      min-width: 120px;
+      touch-action: manipulation;
+    }
+    
+    button:hover {
+      transform: translateY(-1px);
+    }
+    
+    button:active {
+      transform: translateY(0);
+    }
+    
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+    
+    #startStockfishBtn {
+      background: #4CAF50;
+      color: white;
+    }
+    
+    #getMoveBtn {
+      background: #2196F3;
+      color: white;
+    }
+    
+    #playVsEngineBtn {
+      background: #FF9800;
+      color: white;
+    }
+    
+    .output-section {
+      background: #fff;
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 15px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    #output {
+      white-space: pre-wrap;
+      background: #f8f8f8;
+      padding: 10px;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 12px;
+      max-height: 200px;
+      overflow-y: auto;
+      border: 1px solid #ddd;
+    }
+    
+    #engineAnalysis {
+      background: #e3f2fd;
+      padding: 10px;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 12px;
+      margin-top: 10px;
+      border-left: 4px solid #2196F3;
+      min-height: 20px;
+    }
+    
+    /* Mobile-specific chess piece styling */
+    .chessboard-63f37 .square-55d63 {
+      border: 1px solid rgba(0,0,0,0.1) !important;
+    }
+    
+    .chessboard-63f37 .piece-417db {
+      cursor: pointer !important;
+      transition: transform 0.1s ease;
+    }
+    
+    .chessboard-63f37 .piece-417db:hover {
+      transform: scale(1.05);
+    }
+    
     @media (max-width: 600px) {
-      #board {
-        width: 98vw;
-        height: 98vw;
-        min-width: 0;
-        min-height: 0;
+      .container {
+        padding: 5px;
+      }
+      
+      h1 {
+        font-size: 1.2rem;
+        margin: 5px 0;
+      }
+      
+      .board-container {
+        padding: 5px;
+        margin-bottom: 10px;
+      }
+      
+      .controls {
+        padding: 10px;
+      }
+      
+      button {
+        min-width: 100px;
+        padding: 10px 12px;
+        font-size: 13px;
+      }
+      
+      .button-group {
+        flex-direction: column;
+      }
+      
+      button {
+        width: 100%;
+        min-width: auto;
       }
     }
   </style>
@@ -50,33 +208,75 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.css" />
 </head>
 <body>
-  <h1>Stockfish Chess (Web)</h1>
-  <div id="board"></div>
-  <label for="skillLevel">Skill Level:</label>
-  <select id="skillLevel">
-    <option value="1">1 (Beginner)</option>
-    <option value="2">2</option>
-    <option value="3">3</option>
-    <option value="4">4</option>
-    <option value="5">5</option>
-    <option value="6">6</option>
-    <option value="7">7</option>
-    <option value="8">8</option>
-    <option value="9">9</option>
-    <option value="10">10 (Strong)</option>
-  </select>
-  <button id="startStockfishBtn" onclick="startStockfish()">Start Stockfish</button>
-  <button id="getMoveBtn" onclick="getBestMove()">Get Best Move</button>
-  <button id="playVsEngineBtn" onclick="playVsEngine()">Play vs Stockfish</button>
-  <div id="output" style="margin-top:1em;"></div>
-  <div id="engineAnalysis" style="margin-top:1em; background:#e8f4ff; padding:0.5em; border-radius:5px;"></div>
+  <div class="container">
+    <h1>Stockfish Chess</h1>
+    
+    <div class="board-container">
+      <div id="board"></div>
+      <div id="mobile-instructions" style="display: none; text-align: center; margin-top: 10px; font-size: 14px; color: #666; background: #f0f8ff; padding: 8px; border-radius: 4px;">
+        📱 <strong>Mobile:</strong> Tap a piece to select, then tap destination square to move
+      </div>
+    </div>
+    
+    <div class="controls">
+      <label for="skillLevel">Skill Level</label>
+      <select id="skillLevel">
+        <option value="1">1 (Beginner)</option>
+        <option value="2">2</option>
+        <option value="3">3</option>
+        <option value="4">4</option>
+        <option value="5">5</option>
+        <option value="6">6</option>
+        <option value="7">7</option>
+        <option value="8">8</option>
+        <option value="9">9</option>
+        <option value="10">10 (Strong)</option>
+      </select>
+      
+      <div class="button-group">
+        <button id="startStockfishBtn" onclick="startStockfish()">Start Engine</button>
+        <button id="getMoveBtn" onclick="getBestMove()">Get Best Move</button>
+        <button id="playVsEngineBtn" onclick="playVsEngine()">Play vs Engine</button>
+      </div>
+    </div>
+    
+    <div class="output-section">
+      <div id="output"></div>
+      <div id="engineAnalysis"></div>
+    </div>
+  </div>
   <script>
-    // Prevent scrolling when touching the chessboard
-    document.addEventListener('touchmove', function(e) {
-      if (e.target.closest('#board')) {
-        e.preventDefault();
-      }
-    }, { passive: false });
+    // Enhanced mobile touch handling
+    document.addEventListener('DOMContentLoaded', function() {
+      // Prevent scrolling and zooming on the chessboard
+      document.addEventListener('touchmove', function(e) {
+        if (e.target.closest('.board-container')) {
+          e.preventDefault();
+        }
+      }, { passive: false });
+      
+      // Prevent double-tap zoom on buttons and board
+      document.addEventListener('touchend', function(e) {
+        if (e.target.closest('.board-container, button')) {
+          e.preventDefault();
+        }
+      }, { passive: false });
+      
+      // Add visual feedback for touch interactions
+      document.addEventListener('touchstart', function(e) {
+        if (e.target.closest('button')) {
+          e.target.style.opacity = '0.8';
+        }
+      });
+      
+      document.addEventListener('touchend', function(e) {
+        if (e.target.closest('button')) {
+          setTimeout(() => {
+            e.target.style.opacity = '';
+          }, 150);
+        }
+      });
+    });
   </script>
   <script src="main.js"></script>
 </body>
