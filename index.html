@@ -245,20 +245,9 @@
       }
       
       .controls-grid {
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: 1fr;
         gap: 8px;
         margin-bottom: 10px;
-        font-size: 0.85rem;
-      }
-      
-      .control-group label {
-        font-size: 0.75rem;
-      }
-      
-      select, .btn {
-        padding: 8px;
-        font-size: 0.8rem;
-        min-height: 40px;
       }
       
       .action-buttons {
@@ -276,23 +265,15 @@
       
       .game-container {
         border-radius: 15px;
-        max-width: 100%;
       }
       
       .analysis-section {
-        min-height: 120px;
-        max-height: 200px;
-        overflow-y: auto;
+        min-height: 150px;
       }
       
       .engine-evaluation {
-        font-size: 0.7rem;
-        min-height: 50px;
-        padding: 8px;
-      }
-      
-      .clock-time {
-        font-size: 1.2em;
+        font-size: 0.75rem;
+        min-height: 60px;
       }
     }
     
@@ -388,7 +369,7 @@
         </div>
         
         <div class="game-status" id="gameStatus">
-          🔄 Loading chess engine...
+          📱 Tap a piece to select, then tap destination to move
         </div>
         
         <div class="controls-grid">
@@ -468,56 +449,31 @@
   </div>
   
   <!-- Required libraries -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.css" 
-        integrity="sha512-iVMpIygp7pX2iqzv8PaY6sPRdV0AYLaaXRr8Sj6qIMt//GbE5A+sX3p4f2bz2fZr9ykLxLVPG6EW7qfIWHuUeA==" 
-        crossorigin="anonymous" referrerpolicy="no-referrer" />
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" 
-          integrity="sha512-894YE6QWD5I59HgZOGReFYm4dnWc1Qt5NtvYSaNcOP+u1T9qYdvdihz0PPSiiqn/+/3e7Jo4EaG7TubfWGUrMQ==" 
-          crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js" 
-          integrity="sha512-xRllwz6Q2HxilIGZtF3eAGA2QM4kZEamhDtkR0/AyS7k3tM9LKjk7lLgPW8VN7R9FdcU6GQJS5XYU4y3WLsrjA==" 
-          crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.js" 
-          integrity="sha512-dTFRzEOeFB6BVoM04b2YZT7QoH6jl3DbTRq7xUmFxfQr7k0RlqcU0xXLWjsZcnChWgtvG3QGtzTfLmkzjAe5yA==" 
-          crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.js"></script>
   
   <script>
-    // Library loading diagnostics
+    // Simple library checking
     function checkLibraries() {
-      const status = {
-        jquery: typeof $ !== 'undefined',
-        chess: typeof Chess !== 'undefined', 
-        chessboard: typeof Chessboard !== 'undefined'
-      };
+      const allLoaded = typeof $ !== 'undefined' && 
+                       typeof Chess !== 'undefined' && 
+                       typeof Chessboard !== 'undefined';
       
-      console.log('Library status:', status);
-      
-      const gameStatus = document.getElementById('gameStatus');
-      if (!status.jquery) {
-        if (gameStatus) gameStatus.textContent = '❌ jQuery failed to load';
-        return false;
-      }
-      if (!status.chess) {
-        if (gameStatus) gameStatus.textContent = '❌ Chess.js failed to load';
-        return false;
-      }
-      if (!status.chessboard) {
-        if (gameStatus) gameStatus.textContent = '❌ Chessboard.js failed to load';
-        return false;
+      if (!allLoaded) {
+        console.log('Library status:', {
+          jquery: typeof $ !== 'undefined',
+          chess: typeof Chess !== 'undefined',
+          chessboard: typeof Chessboard !== 'undefined'
+        });
       }
       
-      return true;
+      return allLoaded;
     }
     
     // Prevent unwanted mobile behaviors
     document.addEventListener('DOMContentLoaded', function() {
-      // Check if libraries loaded after a delay
-      setTimeout(() => {
-        if (!checkLibraries()) {
-          console.error('Some libraries failed to load from CDN');
-        }
-      }, 2000);
-      
       // Prevent zoom on double tap
       let lastTouchEnd = 0;
       document.addEventListener('touchend', function (event) {

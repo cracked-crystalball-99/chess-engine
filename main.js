@@ -51,8 +51,6 @@ class ChessEngine {
   }
   
   initializeUI() {
-    console.log('Initializing UI...');
-    
     // Initialize chessboard
     const boardConfig = {
       draggable: true, // Enable dragging for desktop
@@ -66,14 +64,7 @@ class ChessEngine {
       snapbackSpeed: 400
     };
     
-    try {
-      this.board = Chessboard('chessboard', boardConfig);
-      console.log('Chessboard initialized successfully');
-    } catch (error) {
-      console.error('Failed to initialize chessboard:', error);
-      this.updateGameStatus('❌ Failed to initialize chessboard');
-      return;
-    }
+    this.board = Chessboard('chessboard', boardConfig);
     
     // Ensure board is properly sized
     setTimeout(() => {
@@ -102,8 +93,7 @@ class ChessEngine {
     this.updateClockHighlight();
     
     // Update initial status
-    this.updateGameStatus('🎮 Chess engine ready! Select time control and start playing.');
-    console.log('Chess engine initialization complete');
+    this.updateGameStatus('🎮 Ready to play! Make your move or start vs engine.');
   }
   
   bindEvents() {
@@ -208,8 +198,6 @@ class ChessEngine {
         blackTimeEl.textContent += ` (+${this.increment})`;
       }
     }
-    
-    console.log('Clock display updated - White:', this.formatTime(this.whiteTime), 'Black:', this.formatTime(this.blackTime), 'Increment:', this.increment);
   }
   
   formatTime(seconds) {
@@ -220,8 +208,6 @@ class ChessEngine {
   
   startClock() {
     if (this.clockTimer) clearInterval(this.clockTimer);
-    
-    console.log('Starting clock, gameStarted:', this.gameStarted);
     
     this.clockTimer = setInterval(() => {
       if (!this.gameStarted || this.game.game_over()) {
@@ -263,10 +249,8 @@ class ChessEngine {
     if (this.increment > 0) {
       if (color === 'white') {
         this.whiteTime += this.increment;
-        console.log(`Added ${this.increment}s increment to White. New time: ${this.formatTime(this.whiteTime)}`);
       } else {
         this.blackTime += this.increment;
-        console.log(`Added ${this.increment}s increment to Black. New time: ${this.formatTime(this.blackTime)}`);
       }
       this.updateClockDisplay();
     }
@@ -667,21 +651,11 @@ class ChessEngine {
 
 // Initialize the chess engine when the page loads
 document.addEventListener('DOMContentLoaded', function() {
-  console.log('DOM loaded, checking libraries...');
-  
   // Wait for libraries to be fully loaded
   function initializeWhenReady() {
-    console.log('Checking library availability:', {
-      jquery: typeof $ !== 'undefined',
-      chess: typeof Chess !== 'undefined', 
-      chessboard: typeof Chessboard !== 'undefined'
-    });
-    
     if (typeof $ !== 'undefined' && typeof Chess !== 'undefined' && typeof Chessboard !== 'undefined') {
-      console.log('All libraries loaded, initializing chess engine...');
       try {
         const chessEngine = new ChessEngine();
-        console.log('Chess engine created successfully');
         
         // Handle window resize and orientation change
         window.addEventListener('resize', () => {
@@ -697,16 +671,8 @@ document.addEventListener('DOMContentLoaded', function() {
         if (gameStatus) gameStatus.textContent = 'Error initializing chess engine: ' + error.message;
       }
     } else {
-      // Libraries not ready yet, try again with timeout
-      const retryCount = initializeWhenReady.retryCount || 0;
-      if (retryCount < 50) { // Max 5 seconds of retries
-        initializeWhenReady.retryCount = retryCount + 1;
-        setTimeout(initializeWhenReady, 100);
-      } else {
-        console.error('Timeout waiting for libraries to load');
-        const gameStatus = document.getElementById('gameStatus');
-        if (gameStatus) gameStatus.textContent = '❌ Failed to load required libraries from CDN';
-      }
+      // Libraries not ready yet, try again
+      setTimeout(initializeWhenReady, 100);
     }
   }
   
