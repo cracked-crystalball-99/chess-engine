@@ -148,8 +148,7 @@ function getBestMove() {
 
 // Enhanced mobile support variables
 let selectedSquare = null;
-let isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
-               (navigator.maxTouchPoints && navigator.maxTouchPoints > 2);
+let isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
 // Mobile-friendly piece selection
 function onMouseDownSquare(square, piece) {
@@ -228,7 +227,7 @@ window.onload = function() {
     position: 'start',
     onDrop: onDrop,
     pieceTheme: 'img/chesspieces/wikipedia/{piece}.png',
-    showNotation: !isMobile, // Hide notation on mobile for more space
+    showNotation: true,
     showErrors: false,
     sparePieces: false,
     appearSpeed: 'fast',
@@ -249,29 +248,13 @@ window.onload = function() {
   function resizeBoard() {
     if (board) {
       board.resize();
-      // On mobile, ensure board fits properly
-      if (isMobile) {
-        const boardEl = document.getElementById('board');
-        const container = document.querySelector('.board-container');
-        if (boardEl && container) {
-          const containerWidth = container.clientWidth - 20; // Account for padding
-          const maxSize = Math.min(containerWidth, window.innerHeight * 0.5);
-          boardEl.style.width = maxSize + 'px';
-          boardEl.style.height = maxSize + 'px';
-        }
-      }
     }
   }
   
   window.addEventListener('resize', resizeBoard);
   window.addEventListener('orientationchange', function() {
-    setTimeout(resizeBoard, 300);
-  });
-  
-  // Initial resize for mobile
-  if (isMobile) {
     setTimeout(resizeBoard, 100);
-  }
+  });
   
   document.getElementById('getMoveBtn').disabled = true;
   document.getElementById('playVsEngineBtn').disabled = false;
