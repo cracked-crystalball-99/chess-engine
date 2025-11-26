@@ -1,6 +1,25 @@
 // Modern Stockfish Lite 17.1 Mobile Chess Engine
 class ChessEngine {
   constructor() {
+    // Check if required libraries are loaded
+    if (typeof $ === 'undefined') {
+      console.error('jQuery library not loaded');
+      document.getElementById('gameStatus').textContent = 'Error: jQuery library failed to load';
+      return;
+    }
+    
+    if (typeof Chess === 'undefined') {
+      console.error('Chess.js library not loaded');
+      document.getElementById('gameStatus').textContent = 'Error: Chess.js library failed to load';
+      return;
+    }
+    
+    if (typeof Chessboard === 'undefined') {
+      console.error('Chessboard.js library not loaded');
+      document.getElementById('gameStatus').textContent = 'Error: Chessboard.js library failed to load';
+      return;
+    }
+    
     this.game = new Chess();
     this.board = null;
     this.stockfish = null;
@@ -58,8 +77,14 @@ class ChessEngine {
       this.updateEngineStatus('Initializing...', false);
     } catch (error) {
       console.error('Failed to load Stockfish:', error);
-      this.updateEngineStatus('Engine failed to load', false);
-      this.updateEvaluation('⚠️ Stockfish engine not available.\n\nPlease ensure stockfish.js and stockfish.wasm are in the same directory as this page.\n\n📥 Download from: https://github.com/official-stockfish/Stockfish\n\n🎮 You can still play in two-player mode!');
+      this.updateEngineStatus('Engine not available', false);
+      
+      // Check if it's a local file issue
+      if (window.location.protocol === 'file:') {
+        this.updateEvaluation('⚠️ Local file detected!\n\nFor full functionality:\n• Serve via HTTP server (python -m http.server)\n• Or deploy to GitHub Pages\n\n🎮 Two-player mode available!');
+      } else {
+        this.updateEvaluation('⚠️ Stockfish engine not available.\n\nPlease ensure stockfish.js and stockfish.wasm are in the same directory.\n\n🎮 You can still play in two-player mode!');
+      }
     }
   }
   
@@ -322,14 +347,29 @@ class ChessEngine {
 
 // Initialize the chess engine when the page loads
 document.addEventListener('DOMContentLoaded', function() {
-  const chessEngine = new ChessEngine();
+  // Wait for libraries to be fully loaded
+  function initializeWhenReady() {
+    if (typeof $ !== 'undefined' && typeof Chess !== 'undefined' && typeof Chessboard !== 'undefined') {
+      try {
+        const chessEngine = new ChessEngine();
+        
+        // Handle window resize and orientation change
+        window.addEventListener('resize', () => {
+          setTimeout(() => chessEngine.resizeBoard(), 100);
+        });
+        
+        window.addEventListener('orientationchange', () => {
+          setTimeout(() => chessEngine.resizeBoard(), 300);
+        });
+      } catch (error) {
+        console.error('Error initializing chess engine:', error);
+        document.getElementById('gameStatus').textContent = 'Error initializing chess engine: ' + error.message;
+      }
+    } else {
+      // Libraries not ready yet, try again
+      setTimeout(initializeWhenReady, 100);
+    }
+  }
   
-  // Handle window resize and orientation change
-  window.addEventListener('resize', () => {
-    setTimeout(() => chessEngine.resizeBoard(), 100);
-  });
-  
-  window.addEventListener('orientationchange', () => {
-    setTimeout(() => chessEngine.resizeBoard(), 300);
-  });
+  initializeWhenReady();
 });
