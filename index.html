@@ -2,280 +2,364 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Stockfish Chess (Web)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Stockfish Lite 17.1 - Mobile Chess</title>
   <style>
-    html, body {
+    * {
+      box-sizing: border-box;
       margin: 0;
       padding: 0;
-      font-family: Arial, sans-serif;
-      background: #f5f5f5;
-      overflow-x: hidden;
+    }
+    
+    html, body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      height: 100vh;
+      overflow: hidden;
       -webkit-text-size-adjust: 100%;
     }
     
-    .container {
-      max-width: 800px;
-      margin: 0 auto;
+    .app {
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
       padding: 10px;
-      min-height: 100vh;
+      max-width: 500px;
+      margin: 0 auto;
+    }
+    
+    .header {
+      text-align: center;
+      color: white;
+      padding: 10px 0;
+      flex-shrink: 0;
+    }
+    
+    .header h1 {
+      font-size: 1.8rem;
+      font-weight: 700;
+      margin-bottom: 5px;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+    
+    .header .subtitle {
+      font-size: 0.9rem;
+      opacity: 0.9;
+      font-weight: 300;
+    }
+    
+    .game-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      overflow: hidden;
+      min-height: 0;
+    }
+    
+    .board-section {
+      padding: 15px;
+      flex-shrink: 0;
+    }
+    
+    #chessboard {
+      width: 100%;
+      aspect-ratio: 1;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    }
+    
+    .controls-section {
+      background: #f8f9fa;
+      padding: 15px;
+      border-top: 1px solid #e9ecef;
+      flex-shrink: 0;
+    }
+    
+    .game-status {
+      text-align: center;
+      padding: 10px;
+      font-weight: 600;
+      color: #495057;
+      border-radius: 8px;
+      background: #e3f2fd;
+      margin-bottom: 15px;
+      border-left: 4px solid #2196f3;
+    }
+    
+    .controls-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+    
+    .control-group {
       display: flex;
       flex-direction: column;
     }
     
-    h1 {
-      text-align: center;
-      margin: 10px 0;
-      font-size: 1.5rem;
-    }
-    
-    .board-container {
-      position: relative;
-      width: 100%;
-      max-width: 500px;
-      margin: 0 auto 20px;
-      background: #fff;
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      padding: 10px;
-    }
-    
-    #board {
-      width: 100% !important;
-      height: auto !important;
-      position: relative;
-      touch-action: none;
-      -webkit-user-select: none;
-      user-select: none;
-    }
-    
-    .controls {
-      background: #fff;
-      border-radius: 8px;
-      padding: 15px;
-      margin-bottom: 15px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-      text-align: center;
-    }
-    
-    .controls label {
-      display: block;
+    .control-group label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #495057;
       margin-bottom: 5px;
-      font-weight: bold;
     }
     
-    .controls select {
-      width: 100%;
-      max-width: 200px;
-      padding: 8px;
-      margin-bottom: 10px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      font-size: 16px;
+    select, .btn {
+      padding: 12px;
+      border: 2px solid #e9ecef;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      background: white;
+      transition: all 0.2s ease;
     }
     
-    .button-group {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      justify-content: center;
+    select:focus, .btn:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
     }
     
-    button {
-      padding: 12px 16px;
-      border: none;
-      border-radius: 6px;
-      font-size: 14px;
-      font-weight: bold;
+    .btn {
       cursor: pointer;
-      transition: all 0.2s;
-      min-width: 120px;
-      touch-action: manipulation;
+      text-align: center;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 48px;
     }
     
-    button:hover {
-      transform: translateY(-1px);
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      border-color: transparent;
     }
     
-    button:active {
+    .btn-secondary {
+      background: #6c757d;
+      color: white;
+      border-color: transparent;
+    }
+    
+    .btn:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+    }
+    
+    .btn:active {
       transform: translateY(0);
     }
     
-    button:disabled {
-      opacity: 0.6;
+    .btn:disabled {
+      opacity: 0.5;
       cursor: not-allowed;
       transform: none;
     }
     
-    #startStockfishBtn {
-      background: #4CAF50;
-      color: white;
+    .action-buttons {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
     }
     
-    #getMoveBtn {
-      background: #2196F3;
-      color: white;
-    }
-    
-    #playVsEngineBtn {
-      background: #FF9800;
-      color: white;
-    }
-    
-    .output-section {
-      background: #fff;
-      border-radius: 8px;
+    .analysis-section {
+      background: #f8f9fa;
+      border-top: 1px solid #e9ecef;
       padding: 15px;
-      margin-bottom: 15px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-    
-    #output {
-      white-space: pre-wrap;
-      background: #f8f8f8;
-      padding: 10px;
-      border-radius: 4px;
-      font-family: monospace;
-      font-size: 12px;
-      max-height: 200px;
+      flex: 1;
+      min-height: 0;
       overflow-y: auto;
-      border: 1px solid #ddd;
+      -webkit-overflow-scrolling: touch;
     }
     
-    #engineAnalysis {
-      background: #e3f2fd;
-      padding: 10px;
-      border-radius: 4px;
-      font-family: monospace;
-      font-size: 12px;
-      margin-top: 10px;
-      border-left: 4px solid #2196F3;
-      min-height: 20px;
+    .analysis-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+      color: #495057;
+      font-weight: 600;
+      font-size: 0.9rem;
     }
     
-    /* Mobile-specific chess piece styling */
-    .chessboard-63f37 .square-55d63 {
-      border: 1px solid rgba(0,0,0,0.1) !important;
+    .engine-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      background: white;
+      border-radius: 8px;
+      margin-bottom: 10px;
+      font-size: 0.85rem;
     }
     
-    .chessboard-63f37 .piece-417db {
-      cursor: pointer !important;
-      transition: transform 0.1s ease;
+    .status-indicator {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #dc3545;
     }
     
-    .chessboard-63f37 .piece-417db:hover {
-      transform: scale(1.05);
+    .status-indicator.ready {
+      background: #28a745;
     }
     
-    @media (max-width: 600px) {
-      .container {
+    .engine-evaluation {
+      background: white;
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 10px;
+      font-family: 'SF Mono', Monaco, monospace;
+      font-size: 0.8rem;
+      line-height: 1.4;
+      min-height: 80px;
+      color: #495057;
+    }
+    
+    .move-notation {
+      font-weight: 600;
+      color: #667eea;
+    }
+    
+    @media (max-width: 480px) {
+      .app {
         padding: 5px;
       }
       
-      h1 {
-        font-size: 1.2rem;
-        margin: 5px 0;
+      .header h1 {
+        font-size: 1.5rem;
       }
       
-      .board-container {
-        padding: 5px;
-        margin-bottom: 10px;
+      .controls-grid {
+        grid-template-columns: 1fr;
       }
       
-      .controls {
+      .action-buttons {
+        grid-template-columns: 1fr;
+      }
+      
+      .board-section {
         padding: 10px;
       }
       
-      button {
-        min-width: 100px;
-        padding: 10px 12px;
-        font-size: 13px;
-      }
-      
-      .button-group {
-        flex-direction: column;
-      }
-      
-      button {
-        width: 100%;
-        min-width: auto;
+      .game-container {
+        border-radius: 15px;
       }
     }
+    
+    /* Loading animation */
+    .loading {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border: 2px solid #f3f3f3;
+      border-top: 2px solid #667eea;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
   </style>
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.css" />
 </head>
 <body>
-  <div class="container">
-    <h1>Stockfish Chess</h1>
-    
-    <div class="board-container">
-      <div id="board"></div>
-      <div id="mobile-instructions" style="display: none; text-align: center; margin-top: 10px; font-size: 14px; color: #666; background: #f0f8ff; padding: 8px; border-radius: 4px;">
-        📱 <strong>Mobile:</strong> Tap a piece to select, then tap destination square to move
-      </div>
+  <div class="app">
+    <div class="header">
+      <h1>Stockfish Lite 17.1</h1>
+      <div class="subtitle">Mobile Chess Engine</div>
     </div>
     
-    <div class="controls">
-      <label for="skillLevel">Skill Level</label>
-      <select id="skillLevel">
-        <option value="1">1 (Beginner)</option>
-        <option value="2">2</option>
-        <option value="3">3</option>
-        <option value="4">4</option>
-        <option value="5">5</option>
-        <option value="6">6</option>
-        <option value="7">7</option>
-        <option value="8">8</option>
-        <option value="9">9</option>
-        <option value="10">10 (Strong)</option>
-      </select>
+    <div class="game-container">
+      <div class="board-section">
+        <div id="chessboard"></div>
+      </div>
       
-      <div class="button-group">
-        <button id="startStockfishBtn" onclick="startStockfish()">Start Engine</button>
-        <button id="getMoveBtn" onclick="getBestMove()">Get Best Move</button>
-        <button id="playVsEngineBtn" onclick="playVsEngine()">Play vs Engine</button>
+      <div class="controls-section">
+        <div class="game-status" id="gameStatus">
+          📱 Tap a piece to select, then tap destination to move
+        </div>
+        
+        <div class="controls-grid">
+          <div class="control-group">
+            <label for="skillLevel">Engine Strength</label>
+            <select id="skillLevel">
+              <option value="1">Beginner (Level 1)</option>
+              <option value="3">Easy (Level 3)</option>
+              <option value="5" selected>Medium (Level 5)</option>
+              <option value="8">Hard (Level 8)</option>
+              <option value="15">Expert (Level 15)</option>
+              <option value="20">Master (Level 20)</option>
+            </select>
+          </div>
+          
+          <div class="control-group">
+            <label for="gameMode">Game Mode</label>
+            <select id="gameMode">
+              <option value="analysis">Analysis Mode</option>
+              <option value="play" selected>Play vs Engine</option>
+            </select>
+          </div>
+        </div>
+        
+        <div class="action-buttons">
+          <button class="btn btn-primary" id="newGameBtn">🆕 New Game</button>
+          <button class="btn btn-secondary" id="flipBoardBtn">🔄 Flip Board</button>
+        </div>
       </div>
-    </div>
-    
-    <div class="output-section">
-      <div id="output"></div>
-      <div id="engineAnalysis"></div>
+      
+      <div class="analysis-section">
+        <div class="analysis-header">
+          <span>🧠 Engine Analysis</span>
+        </div>
+        
+        <div class="engine-status">
+          <div class="status-indicator" id="engineIndicator"></div>
+          <span id="engineStatusText">Engine Starting...</span>
+        </div>
+        
+        <div class="engine-evaluation" id="engineEvaluation">
+          Start a game to see engine analysis...
+        </div>
+      </div>
     </div>
   </div>
+  
+  <!-- Chess.js and Chessboard.js libraries -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.css">
+  
   <script>
-    // Enhanced mobile touch handling
+    // Prevent unwanted mobile behaviors
     document.addEventListener('DOMContentLoaded', function() {
-      // Prevent scrolling and zooming on the chessboard
+      // Prevent zoom on double tap
+      let lastTouchEnd = 0;
+      document.addEventListener('touchend', function (event) {
+        const now = (new Date()).getTime();
+        if (now - lastTouchEnd <= 300) {
+          event.preventDefault();
+        }
+        lastTouchEnd = now;
+      }, false);
+      
+      // Prevent scrolling on game area
       document.addEventListener('touchmove', function(e) {
-        if (e.target.closest('.board-container')) {
-          e.preventDefault();
+        if (e.target.closest('.game-container')) {
+          const analysisSection = e.target.closest('.analysis-section');
+          if (!analysisSection) {
+            e.preventDefault();
+          }
         }
       }, { passive: false });
-      
-      // Prevent double-tap zoom on buttons and board
-      document.addEventListener('touchend', function(e) {
-        if (e.target.closest('.board-container, button')) {
-          e.preventDefault();
-        }
-      }, { passive: false });
-      
-      // Add visual feedback for touch interactions
-      document.addEventListener('touchstart', function(e) {
-        if (e.target.closest('button')) {
-          e.target.style.opacity = '0.8';
-        }
-      });
-      
-      document.addEventListener('touchend', function(e) {
-        if (e.target.closest('button')) {
-          setTimeout(() => {
-            e.target.style.opacity = '';
-          }, 150);
-        }
-      });
     });
   </script>
   <script src="main.js"></script>
