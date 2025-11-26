@@ -231,7 +231,7 @@
       color: #667eea;
     }
     
-    @media (max-width: 480px) {
+    @media (max-width: 768px) {
       .app {
         padding: 3px;
         min-height: 100vh;
@@ -289,8 +289,8 @@
       }
       
       .controls-grid {
-        display: grid !important;
-        grid-template-columns: 1fr 1fr;
+        display: flex !important;
+        flex-wrap: wrap !important;
         gap: 8px;
         margin-bottom: 12px;
         width: 100%;
@@ -302,6 +302,8 @@
         flex-direction: column;
         visibility: visible !important;
         opacity: 1 !important;
+        flex: 1 1 calc(50% - 4px);
+        min-width: 0;
       }
       
       .control-group label {
@@ -325,10 +327,13 @@
       }
       
       .action-buttons {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
+        display: flex !important;
         gap: 8px;
         margin-bottom: 8px;
+      }
+      
+      .action-buttons .btn {
+        flex: 1 1 50%;
       }
       
       .btn {
@@ -471,7 +476,7 @@
           📱 Tap a piece to select, then tap destination to move
         </div>
         
-        <div class="mobile-test" style="background: red; color: white; padding: 5px; margin: 5px 0; display: none;">MOBILE CSS ACTIVE</div>
+        <div class="mobile-test" style="background: red; color: white; padding: 10px; margin: 10px 0; display: none; font-weight: bold; text-align: center; border: 2px solid darkred;">📱 MOBILE CSS ACTIVE 📱</div>
         
         <div class="controls-grid">
           <div class="control-group">
