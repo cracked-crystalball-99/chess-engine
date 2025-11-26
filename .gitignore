@@ -1,0 +1,14 @@
+# Development scripts (local only)
+sync-to-xampp.ps1
+sync-to-xampp.bat
+quick-sync.ps1
+quick-sync.bat
+
+# Local development files
+*.local.*
+.vscode/
+.idea/
+node_modules/
+npm-debug.log*
+.DS_Store
+Thumbs.db
