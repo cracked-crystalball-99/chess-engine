@@ -4,19 +4,22 @@ class ChessEngine {
     // Check if required libraries are loaded
     if (typeof $ === 'undefined') {
       console.error('jQuery library not loaded');
-      document.getElementById('gameStatus').textContent = 'Error: jQuery library failed to load';
+      const gameStatus = document.getElementById('gameStatus');
+      if (gameStatus) gameStatus.textContent = 'Error: jQuery library failed to load';
       return;
     }
     
     if (typeof Chess === 'undefined') {
       console.error('Chess.js library not loaded');
-      document.getElementById('gameStatus').textContent = 'Error: Chess.js library failed to load';
+      const gameStatus = document.getElementById('gameStatus');
+      if (gameStatus) gameStatus.textContent = 'Error: Chess.js library failed to load';
       return;
     }
     
     if (typeof Chessboard === 'undefined') {
       console.error('Chessboard.js library not loaded');
-      document.getElementById('gameStatus').textContent = 'Error: Chessboard.js library failed to load';
+      const gameStatus = document.getElementById('gameStatus');
+      if (gameStatus) gameStatus.textContent = 'Error: Chessboard.js library failed to load';
       return;
     }
     
@@ -30,6 +33,14 @@ class ChessEngine {
     this.selectedSquare = null;
     this.isMobile = this.detectMobile();
     
+    // Clock properties
+    this.timeControl = 5 * 60; // Default 5 minutes in seconds
+    this.increment = 0; // Default no increment
+    this.whiteTime = this.timeControl;
+    this.blackTime = this.timeControl;
+    this.clockTimer = null;
+    this.gameStarted = false;
+    
     this.initializeUI();
     this.initializeStockfish();
   }
@@ -42,30 +53,83 @@ class ChessEngine {
   initializeUI() {
     // Initialize chessboard
     const boardConfig = {
-      draggable: !this.isMobile,
+      draggable: true, // Enable dragging for desktop
       position: 'start',
       onDrop: this.onDrop.bind(this),
-      onMouseDownSquare: this.onSquareClick.bind(this),
+      onMouseDownSquare: this.isMobile ? this.onSquareClick.bind(this) : undefined,
       pieceTheme: 'https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png',
-      showNotation: !this.isMobile
+      showNotation: !this.isMobile,
+      moveSpeed: 'fast',
+      snapSpeed: 200,
+      snapbackSpeed: 400
     };
     
     this.board = Chessboard('chessboard', boardConfig);
     
+    // Ensure board is properly sized
+    setTimeout(() => {
+      if (this.board) {
+        this.board.resize();
+      }
+    }, 100);
+    
     // Bind event listeners
     this.bindEvents();
     
+    // Initialize clock display with current settings
+    const timeControlEl = document.getElementById('timeControl');
+    const timeIncrementEl = document.getElementById('timeIncrement');
+    
+    if (timeControlEl) {
+      this.timeControl = parseInt(timeControlEl.value) * 60;
+      this.whiteTime = this.timeControl;
+      this.blackTime = this.timeControl;
+    }
+    if (timeIncrementEl) {
+      this.increment = parseInt(timeIncrementEl.value);
+    }
+    
+    this.updateClockDisplay();
+    this.updateClockHighlight();
+    
     // Update initial status
-    this.updateGameStatus('Ready to play!');
+    this.updateGameStatus('🎮 Ready to play! Make your move or start vs engine.');
   }
   
   bindEvents() {
-    document.getElementById('newGameBtn').addEventListener('click', () => this.newGame());
-    document.getElementById('flipBoardBtn').addEventListener('click', () => this.board.flip());
-    document.getElementById('skillLevel').addEventListener('change', () => this.setSkillLevel());
-    document.getElementById('gameMode').addEventListener('change', (e) => {
+    const newGameBtn = document.getElementById('newGameBtn');
+    const flipBoardBtn = document.getElementById('flipBoardBtn');
+    const skillLevel = document.getElementById('skillLevel');
+    const gameMode = document.getElementById('gameMode');
+    const timeControl = document.getElementById('timeControl');
+    const timeIncrement = document.getElementById('timeIncrement');
+    
+    if (newGameBtn) newGameBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      this.newGame();
+    });
+    if (flipBoardBtn) flipBoardBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      this.flipBoard();
+    });
+    if (skillLevel) skillLevel.addEventListener('change', () => this.setSkillLevel());
+    if (timeControl) timeControl.addEventListener('change', (e) => {
+      this.timeControl = parseInt(e.target.value) * 60; // Convert minutes to seconds
+      this.whiteTime = this.timeControl;
+      this.blackTime = this.timeControl;
+      this.updateClockDisplay();
+    });
+    if (timeIncrement) timeIncrement.addEventListener('change', (e) => {
+      this.increment = parseInt(e.target.value);
+    });
+    if (gameMode) gameMode.addEventListener('change', (e) => {
       this.gameMode = e.target.value;
-      this.updateGameStatus(`Switched to ${e.target.value} mode`);
+      const mode = e.target.value === 'play' ? 'Play vs Engine' : 'Analysis Mode';
+      this.updateGameStatus(`🔄 Switched to ${mode}`);
+      
+      if (e.target.value === 'analysis') {
+        this.isPlayerTurn = true; // Allow free play in analysis mode
+      }
     });
   }
   
@@ -109,28 +173,220 @@ class ChessEngine {
   setSkillLevel() {
     if (!this.engineReady || !this.stockfish) return;
     
-    const level = document.getElementById('skillLevel').value;
+    const skillLevelEl = document.getElementById('skillLevel');
+    if (!skillLevelEl) return;
+    
+    const level = skillLevelEl.value;
     this.stockfish.postMessage(`setoption name Skill Level value ${level}`);
     this.stockfish.postMessage('setoption name MultiPV value 1');
+  }
+  
+  // Clock functionality
+  updateClockDisplay() {
+    const whiteTimeEl = document.getElementById('whiteTime');
+    const blackTimeEl = document.getElementById('blackTime');
+    
+    if (whiteTimeEl) {
+      whiteTimeEl.textContent = this.formatTime(this.whiteTime);
+      if (this.increment > 0) {
+        whiteTimeEl.textContent += ` (+${this.increment})`;
+      }
+    }
+    if (blackTimeEl) {
+      blackTimeEl.textContent = this.formatTime(this.blackTime);
+      if (this.increment > 0) {
+        blackTimeEl.textContent += ` (+${this.increment})`;
+      }
+    }
+    
+    console.log('Clock display updated - White:', this.formatTime(this.whiteTime), 'Black:', this.formatTime(this.blackTime), 'Increment:', this.increment);
+  }
+  
+  formatTime(seconds) {
+    const minutes = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${minutes}:${secs.toString().padStart(2, '0')}`;
+  }
+  
+  startClock() {
+    if (this.clockTimer) clearInterval(this.clockTimer);
+    
+    console.log('Starting clock, gameStarted:', this.gameStarted);
+    
+    this.clockTimer = setInterval(() => {
+      if (!this.gameStarted || this.game.game_over()) {
+        this.stopClock();
+        return;
+      }
+      
+      const currentTurn = this.game.turn();
+      
+      if (currentTurn === 'w') {
+        this.whiteTime--;
+        if (this.whiteTime <= 0) {
+          this.whiteTime = 0;
+          this.handleTimeOut('white');
+          return;
+        }
+      } else {
+        this.blackTime--;
+        if (this.blackTime <= 0) {
+          this.blackTime = 0;
+          this.handleTimeOut('black');
+          return;
+        }
+      }
+      
+      this.updateClockDisplay();
+      this.updateClockHighlight();
+    }, 1000);
+  }
+  
+  stopClock() {
+    if (this.clockTimer) {
+      clearInterval(this.clockTimer);
+      this.clockTimer = null;
+    }
+  }
+  
+  addIncrement(color) {
+    if (this.increment > 0) {
+      if (color === 'white') {
+        this.whiteTime += this.increment;
+        console.log(`Added ${this.increment}s increment to White. New time: ${this.formatTime(this.whiteTime)}`);
+      } else {
+        this.blackTime += this.increment;
+        console.log(`Added ${this.increment}s increment to Black. New time: ${this.formatTime(this.blackTime)}`);
+      }
+      this.updateClockDisplay();
+    }
+  }
+  
+  updateClockHighlight() {
+    const whiteClockEl = document.getElementById('whiteClock');
+    const blackClockEl = document.getElementById('blackClock');
+    
+    if (!whiteClockEl || !blackClockEl) return;
+    
+    const currentTurn = this.game.turn();
+    
+    // Remove all classes
+    whiteClockEl.classList.remove('active', 'low-time');
+    blackClockEl.classList.remove('active', 'low-time');
+    
+    // Add active class to current player
+    if (currentTurn === 'w') {
+      whiteClockEl.classList.add('active');
+      if (this.whiteTime <= 30) whiteClockEl.classList.add('low-time');
+    } else {
+      blackClockEl.classList.add('active');
+      if (this.blackTime <= 30) blackClockEl.classList.add('low-time');
+    }
+  }
+  
+  handleTimeOut(color) {
+    this.stopClock();
+    const winner = color === 'white' ? 'Black' : 'White';
+    this.updateGameStatus(`⏰ Time's up! ${winner} wins on time!`);
+    this.gameStarted = false;
+  }
+  
+  resetClock() {
+    this.stopClock();
+    this.whiteTime = this.timeControl;
+    this.blackTime = this.timeControl;
+    this.gameStarted = false;
+    this.updateClockDisplay();
+    this.updateClockHighlight();
+  }
+
+  flipBoard() {
+    this.board.flip();
+    
+    // Toggle player color
+    this.playerColor = this.playerColor === 'white' ? 'black' : 'white';
+    
+    // Update clock highlight to reflect new perspective
+    this.updateClockHighlight();
+    
+    // Update game status
+    const colorText = this.playerColor === 'white' ? 'White' : 'Black';
+    this.updateGameStatus(`🔄 Playing as ${colorText}`);
+    
+    // If we're now playing as black and it's a new game (white's turn), engine should move first
+    if (this.playerColor === 'black' && this.game.turn() === 'w' && this.gameMode === 'play' && this.engineReady) {
+      this.isPlayerTurn = false;
+      this.updateGameStatus('🤖 Engine (White) is thinking...');
+      
+      setTimeout(() => {
+        this.requestEngineMove();
+      }, 500);
+    } else if (this.playerColor === 'white' && this.game.turn() === 'w') {
+      this.isPlayerTurn = true;
+      this.updateGameStatus('Your turn (White)');
+    }
   }
   
   newGame() {
     this.game.reset();
     this.board.position('start');
-    this.isPlayerTurn = true;
     this.selectedSquare = null;
-    this.playerColor = 'white';
+    
+    // Get current time control and increment settings
+    const timeControlEl = document.getElementById('timeControl');
+    const timeIncrementEl = document.getElementById('timeIncrement');
+    
+    if (timeControlEl) {
+      this.timeControl = parseInt(timeControlEl.value) * 60;
+    }
+    if (timeIncrementEl) {
+      this.increment = parseInt(timeIncrementEl.value);
+    }
+    
+    this.gameStarted = true;
+    
+    // Reset and start clock
+    this.resetClock();
+    this.startClock();
     
     if (this.engineReady) {
       this.stockfish.postMessage('ucinewgame');
     }
     
-    this.updateGameStatus('New game started! White to move.');
-    this.updateEvaluation('Game started. Make your first move!');
+    // Set up turn logic based on player color
+    if (this.playerColor === 'white') {
+      this.isPlayerTurn = true;
+      const mode = this.gameMode === 'play' ? 'vs Engine' : 'Two-Player';
+      this.updateGameStatus(`🆕 New ${mode} game started! Your turn (White).`);
+      this.updateEvaluation('Game started. Make your first move!');
+    } else {
+      // Playing as black, engine moves first
+      this.isPlayerTurn = false;
+      const mode = this.gameMode === 'play' ? 'vs Engine' : 'Two-Player';
+      this.updateGameStatus(`🆕 New ${mode} game started! Engine (White) to move.`);
+      this.updateEvaluation('Game started. Engine will move first.');
+      
+      if (this.gameMode === 'play' && this.engineReady) {
+        setTimeout(() => {
+          this.requestEngineMove();
+        }, 1000);
+      }
+    }
   }
   
   onDrop(source, target) {
-    if (!this.isPlayerTurn) return 'snapback';
+    // In two-player mode, allow all moves. In vs engine mode, only allow player moves
+    if (this.gameMode === 'play' && !this.isPlayerTurn) {
+      return 'snapback';
+    }
+    
+    // Check if it's the player's turn based on color
+    const currentTurn = this.game.turn();
+    const playerTurn = this.playerColor === 'white' ? 'w' : 'b';
+    
+    if (this.gameMode === 'play' && currentTurn !== playerTurn) {
+      return 'snapback';
+    }
     
     const move = this.game.move({
       from: source,
@@ -140,8 +396,13 @@ class ChessEngine {
     
     if (move === null) return 'snapback';
     
+    // Start clock on first move if not started
+    if (!this.gameStarted) {
+      this.gameStarted = true;
+      this.startClock();
+    }
+    
     this.handlePlayerMove();
-    return 'keep';
   }
   
   onSquareClick(square, piece) {
@@ -181,6 +442,13 @@ class ChessEngine {
         // Valid move
         this.selectedSquare = null;
         this.board.position(this.game.fen());
+        
+        // Start clock on first move if not started
+        if (!this.gameStarted) {
+          this.gameStarted = true;
+          this.startClock();
+        }
+        
         this.handlePlayerMove();
       }
     }
@@ -189,13 +457,24 @@ class ChessEngine {
   isPieceOwnedByPlayer(piece) {
     const isWhitePiece = piece.charAt(0) === 'w';
     const isPlayerWhite = this.playerColor === 'white';
-    const isPlayerTurn = this.game.turn() === (isPlayerWhite ? 'w' : 'b');
+    const isCurrentPlayerTurn = this.game.turn() === (isPlayerWhite ? 'w' : 'b');
     
-    return (isWhitePiece === isPlayerWhite) && isPlayerTurn;
+    // In vs engine mode, only allow moves when it's player's turn
+    if (this.gameMode === 'play' && !isCurrentPlayerTurn) {
+      return false;
+    }
+    
+    return (isWhitePiece === isPlayerWhite) && isCurrentPlayerTurn;
   }
   
   handlePlayerMove() {
-    this.isPlayerTurn = false;
+    // Add increment for the player who just moved
+    const previousTurn = this.game.turn() === 'w' ? 'black' : 'white';
+    this.addIncrement(previousTurn);
+    
+    // Update board position
+    this.board.position(this.game.fen());
+    this.updateClockHighlight();
     
     // Check game status
     if (this.game.game_over()) {
@@ -203,18 +482,33 @@ class ChessEngine {
       return;
     }
     
-    this.updateGameStatus('Engine is thinking...');
+    // Always analyze the position if engine is available
+    if (this.engineReady) {
+      this.analyzePosition();
+    }
     
     if (this.gameMode === 'play' && this.engineReady) {
-      // Get engine move
+      // Engine vs Player mode
+      this.isPlayerTurn = false;
+      this.updateGameStatus('🤖 Engine is thinking...');
+      
       setTimeout(() => {
         this.requestEngineMove();
       }, 500);
     } else {
-      // Analysis mode or engine not ready
+      // Two-player or analysis mode
       this.isPlayerTurn = true;
-      this.updateGameStatus('Your turn');
+      const turn = this.game.turn() === 'w' ? 'White' : 'Black';
+      this.updateGameStatus(`${turn} to move`);
     }
+  }
+  
+  analyzePosition() {
+    if (!this.engineReady) return;
+    
+    const fen = this.game.fen();
+    this.stockfish.postMessage(`position fen ${fen}`);
+    this.stockfish.postMessage('go depth 10');
   }
   
   requestEngineMove() {
@@ -223,7 +517,8 @@ class ChessEngine {
     const fen = this.game.fen();
     this.stockfish.postMessage(`position fen ${fen}`);
     
-    const skillLevel = parseInt(document.getElementById('skillLevel').value);
+    const skillLevelEl = document.getElementById('skillLevel');
+    const skillLevel = skillLevelEl ? parseInt(skillLevelEl.value) : 5;
     const depth = Math.max(3, Math.min(15, skillLevel));
     
     this.stockfish.postMessage(`go depth ${depth}`);
@@ -244,18 +539,27 @@ class ChessEngine {
     
     const move = this.game.move(moveObj);
     if (move) {
+      // Add increment for the engine (who just moved)
+      const engineColor = this.playerColor === 'white' ? 'black' : 'white';
+      this.addIncrement(engineColor);
+      
       this.board.position(this.game.fen());
+      this.updateClockHighlight();
       
       if (this.game.game_over()) {
         this.handleGameOver();
       } else {
         this.isPlayerTurn = true;
-        this.updateGameStatus('Your turn');
+        const playerColorText = this.playerColor === 'white' ? 'White' : 'Black';
+        this.updateGameStatus(`Your turn (${playerColorText})`);
       }
     }
   }
   
   handleGameOver() {
+    this.stopClock();
+    this.gameStarted = false;
+    
     let status = '';
     
     if (this.game.in_checkmate()) {
@@ -324,17 +628,23 @@ class ChessEngine {
   }
   
   updateGameStatus(message) {
-    document.getElementById('gameStatus').textContent = message;
+    const gameStatus = document.getElementById('gameStatus');
+    if (gameStatus) gameStatus.textContent = message;
   }
   
   updateEngineStatus(message, ready) {
-    document.getElementById('engineStatusText').textContent = message;
-    document.getElementById('engineIndicator').className = 
-      `status-indicator ${ready ? 'ready' : ''}`;
+    const engineStatusText = document.getElementById('engineStatusText');
+    const engineIndicator = document.getElementById('engineIndicator');
+    
+    if (engineStatusText) engineStatusText.textContent = message;
+    if (engineIndicator) {
+      engineIndicator.className = `status-indicator ${ready ? 'ready' : ''}`;
+    }
   }
   
   updateEvaluation(text) {
-    document.getElementById('engineEvaluation').textContent = text;
+    const engineEvaluation = document.getElementById('engineEvaluation');
+    if (engineEvaluation) engineEvaluation.textContent = text;
   }
   
   // Responsive board sizing
@@ -363,7 +673,8 @@ document.addEventListener('DOMContentLoaded', function() {
         });
       } catch (error) {
         console.error('Error initializing chess engine:', error);
-        document.getElementById('gameStatus').textContent = 'Error initializing chess engine: ' + error.message;
+        const gameStatus = document.getElementById('gameStatus');
+        if (gameStatus) gameStatus.textContent = 'Error initializing chess engine: ' + error.message;
       }
     } else {
       // Libraries not ready yet, try again

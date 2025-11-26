@@ -14,13 +14,16 @@
     html, body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      height: 100vh;
-      overflow: hidden;
+      min-height: 100vh;
+      height: auto;
+      overflow-x: hidden;
+      overflow-y: auto;
       -webkit-text-size-adjust: 100%;
     }
     
     .app {
-      height: 100vh;
+      min-height: 100vh;
+      height: auto;
       display: flex;
       flex-direction: column;
       padding: 10px;
@@ -173,8 +176,7 @@
       background: #f8f9fa;
       border-top: 1px solid #e9ecef;
       padding: 15px;
-      flex: 1;
-      min-height: 0;
+      min-height: 200px;
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
     }
@@ -231,6 +233,11 @@
     @media (max-width: 480px) {
       .app {
         padding: 5px;
+        min-height: 100vh;
+      }
+      
+      .header {
+        padding: 5px 0;
       }
       
       .header h1 {
@@ -239,18 +246,34 @@
       
       .controls-grid {
         grid-template-columns: 1fr;
+        gap: 8px;
+        margin-bottom: 10px;
       }
       
       .action-buttons {
         grid-template-columns: 1fr;
+        gap: 8px;
       }
       
       .board-section {
         padding: 10px;
       }
       
+      .controls-section, .analysis-section {
+        padding: 10px;
+      }
+      
       .game-container {
         border-radius: 15px;
+      }
+      
+      .analysis-section {
+        min-height: 150px;
+      }
+      
+      .engine-evaluation {
+        font-size: 0.75rem;
+        min-height: 60px;
       }
     }
     
@@ -269,6 +292,56 @@
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
     }
+    
+    /* Clock Styles */
+    .clock-display {
+      display: flex;
+      justify-content: space-between;
+      gap: 15px;
+      margin-bottom: 15px;
+    }
+    
+    .clock {
+      flex: 1;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 12px;
+      text-align: center;
+      backdrop-filter: blur(10px);
+      border: 2px solid transparent;
+      transition: all 0.3s ease;
+    }
+    
+    .clock.active {
+      border-color: #667eea;
+      background: rgba(102, 126, 234, 0.2);
+      box-shadow: 0 0 15px rgba(102, 126, 234, 0.3);
+    }
+    
+    .clock.low-time {
+      border-color: #ff6b6b;
+      background: rgba(255, 107, 107, 0.2);
+      animation: clockPulse 1s infinite;
+    }
+    
+    @keyframes clockPulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+    
+    .clock-label {
+      font-size: 0.8em;
+      color: #b8c5d6;
+      margin-bottom: 5px;
+      font-weight: 600;
+    }
+    
+    .clock-time {
+      font-size: 1.5em;
+      font-weight: bold;
+      color: #ffffff;
+      font-family: 'Courier New', monospace;
+    }
   </style>
 </head>
 <body>
@@ -284,6 +357,17 @@
       </div>
       
       <div class="controls-section">
+        <div class="clock-display">
+          <div class="clock white-clock" id="whiteClock">
+            <div class="clock-label">White</div>
+            <div class="clock-time" id="whiteTime">5:00</div>
+          </div>
+          <div class="clock black-clock" id="blackClock">
+            <div class="clock-label">Black</div>
+            <div class="clock-time" id="blackTime">5:00</div>
+          </div>
+        </div>
+        
         <div class="game-status" id="gameStatus">
           📱 Tap a piece to select, then tap destination to move
         </div>
@@ -292,12 +376,16 @@
           <div class="control-group">
             <label for="skillLevel">Engine Strength</label>
             <select id="skillLevel">
-              <option value="1">Beginner (Level 1)</option>
-              <option value="3">Easy (Level 3)</option>
-              <option value="5" selected>Medium (Level 5)</option>
-              <option value="8">Hard (Level 8)</option>
-              <option value="15">Expert (Level 15)</option>
-              <option value="20">Master (Level 20)</option>
+              <option value="1">Beginner (~1000)</option>
+              <option value="2">Novice (~1200)</option>
+              <option value="3">Amateur (~1400)</option>
+              <option value="4">Club Player (~1600)</option>
+              <option value="5" selected>Tournament (~1800)</option>
+              <option value="6">Expert (~2000)</option>
+              <option value="7">Candidate Master (~2200)</option>
+              <option value="8">Master (~2400)</option>
+              <option value="9">Grandmaster (~2600)</option>
+              <option value="10">World Champion (~2800+)</option>
             </select>
           </div>
           
@@ -306,6 +394,33 @@
             <select id="gameMode">
               <option value="analysis">Analysis Mode</option>
               <option value="play" selected>Play vs Engine</option>
+            </select>
+          </div>
+          
+          <div class="control-group">
+            <label for="timeControl">Time Control</label>
+            <select id="timeControl">
+              <option value="1">1 minute</option>
+              <option value="2">2 minutes</option>
+              <option value="3">3 minutes</option>
+              <option value="5" selected>5 minutes</option>
+              <option value="10">10 minutes</option>
+              <option value="15">15 minutes</option>
+              <option value="30">30 minutes</option>
+              <option value="45">45 minutes</option>
+              <option value="60">1 hour</option>
+              <option value="90">1.5 hours</option>
+            </select>
+          </div>
+          
+          <div class="control-group">
+            <label for="timeIncrement">Increment</label>
+            <select id="timeIncrement">
+              <option value="0" selected>No increment</option>
+              <option value="1">+1 second</option>
+              <option value="2">+2 seconds</option>
+              <option value="3">+3 seconds</option>
+              <option value="5">+5 seconds</option>
             </select>
           </div>
         </div>
