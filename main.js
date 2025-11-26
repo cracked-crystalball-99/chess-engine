@@ -51,6 +51,8 @@ class ChessEngine {
   }
   
   initializeUI() {
+    console.log('Initializing UI...');
+    
     // Initialize chessboard
     const boardConfig = {
       draggable: true, // Enable dragging for desktop
@@ -64,7 +66,14 @@ class ChessEngine {
       snapbackSpeed: 400
     };
     
-    this.board = Chessboard('chessboard', boardConfig);
+    try {
+      this.board = Chessboard('chessboard', boardConfig);
+      console.log('Chessboard initialized successfully');
+    } catch (error) {
+      console.error('Failed to initialize chessboard:', error);
+      this.updateGameStatus('❌ Failed to initialize chessboard');
+      return;
+    }
     
     // Ensure board is properly sized
     setTimeout(() => {
@@ -93,7 +102,8 @@ class ChessEngine {
     this.updateClockHighlight();
     
     // Update initial status
-    this.updateGameStatus('🎮 Ready to play! Make your move or start vs engine.');
+    this.updateGameStatus('🎮 Chess engine ready! Select time control and start playing.');
+    console.log('Chess engine initialization complete');
   }
   
   bindEvents() {
@@ -657,11 +667,21 @@ class ChessEngine {
 
 // Initialize the chess engine when the page loads
 document.addEventListener('DOMContentLoaded', function() {
+  console.log('DOM loaded, checking libraries...');
+  
   // Wait for libraries to be fully loaded
   function initializeWhenReady() {
+    console.log('Checking library availability:', {
+      jquery: typeof $ !== 'undefined',
+      chess: typeof Chess !== 'undefined', 
+      chessboard: typeof Chessboard !== 'undefined'
+    });
+    
     if (typeof $ !== 'undefined' && typeof Chess !== 'undefined' && typeof Chessboard !== 'undefined') {
+      console.log('All libraries loaded, initializing chess engine...');
       try {
         const chessEngine = new ChessEngine();
+        console.log('Chess engine created successfully');
         
         // Handle window resize and orientation change
         window.addEventListener('resize', () => {
@@ -677,8 +697,16 @@ document.addEventListener('DOMContentLoaded', function() {
         if (gameStatus) gameStatus.textContent = 'Error initializing chess engine: ' + error.message;
       }
     } else {
-      // Libraries not ready yet, try again
-      setTimeout(initializeWhenReady, 100);
+      // Libraries not ready yet, try again with timeout
+      const retryCount = initializeWhenReady.retryCount || 0;
+      if (retryCount < 50) { // Max 5 seconds of retries
+        initializeWhenReady.retryCount = retryCount + 1;
+        setTimeout(initializeWhenReady, 100);
+      } else {
+        console.error('Timeout waiting for libraries to load');
+        const gameStatus = document.getElementById('gameStatus');
+        if (gameStatus) gameStatus.textContent = '❌ Failed to load required libraries from CDN';
+      }
     }
   }
   
