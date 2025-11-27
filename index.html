@@ -405,44 +405,9 @@
         transform: translate3d(0, 0, 0);
       }
       
-      /* Mobile Play Mode Styles */
+      /* Simple mobile transitions */
       .app {
         transition: all 0.3s ease;
-      }
-      
-      body.play-mode {
-        height: 100vh !important;
-        overflow: hidden !important;
-        position: fixed !important;
-      }
-      
-      body.play-mode .app {
-        height: 100vh !important;
-        display: flex !important;
-        flex-direction: column !important;
-        justify-content: center !important;
-        padding-bottom: 10px !important;
-      }
-      
-      body.play-mode .game-container {
-        margin-bottom: 5px !important;
-      }
-      
-      body.play-mode .controls-section {
-        max-height: 120px !important;
-        overflow: hidden !important;
-        padding: 8px !important;
-      }
-      
-      body.play-mode .analysis-section {
-        display: none !important;
-      }
-      
-      /* Settings mode - allow full scrolling */
-      body.settings-mode {
-        overflow-y: auto !important;
-        position: relative !important;
-        height: auto !important;
       }
     }
     
@@ -541,12 +506,9 @@
           📱 Tap a piece to select, then tap destination to move
         </div>
         
-        <div class="mobile-test" style="background: #007bff; color: white; padding: 8px; margin: 8px 0; display: none; font-weight: bold; text-align: center; border: 2px solid #0056b3; border-radius: 8px; font-size: 0.85rem;">
-          📱 <span id="mobileMode">MOBILE MODE ACTIVE</span> 📱
-          <div style="margin-top: 5px;">
-            <button onclick="toggleMobileMode('play')" style="background: #28a745; color: white; border: none; padding: 4px 8px; margin: 0 2px; border-radius: 4px; font-size: 0.75rem;">🎮 Play Mode</button>
-            <button onclick="toggleMobileMode('settings')" style="background: #ffc107; color: black; border: none; padding: 4px 8px; margin: 0 2px; border-radius: 4px; font-size: 0.75rem;">⚙️ Settings</button>
-          </div>
+        <div class="mobile-test" style="background: #28a745; color: white; padding: 10px; margin: 10px 0; display: none; font-weight: bold; text-align: center; border: 2px solid #1e7e34; border-radius: 8px;">
+          📱 MOBILE READY 📱<br>
+          <small style="font-weight: normal; opacity: 0.9;">Scroll ↓ for settings • Auto-returns to board after changes</small>
         </div>
         
         <div class="controls-grid">
@@ -605,6 +567,10 @@
         <div class="action-buttons">
           <button class="btn btn-primary" id="newGameBtn">🆕 New Game</button>
           <button class="btn btn-secondary" id="flipBoardBtn">🔄 Flip Board</button>
+        </div>
+        
+        <div class="mobile-return" style="display: none; text-align: center; margin-top: 10px;">
+          <button onclick="scrollToBoard()" style="background: #007bff; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: bold;">⬆️ Return to Board</button>
         </div>
       </div>
       
@@ -680,30 +646,24 @@
         console.log('📱 PLAY MODE: Board locked, scrolling disabled');
         
       } else if (mode === 'settings') {
-        // Allow scrolling for settings access
-        isMobilePlayMode = false;
-        isSettingsMode = true;
-        body.classList.add('settings-mode');
-        
-        // Update UI indicators  
-        modeIndicator.textContent = '⚙️ SETTINGS MODE - Can Scroll';
-        gameStatus.innerHTML = '⚙️ <strong>SETTINGS MODE</strong> - Scroll to access all options, then tap \"🎮 Play Mode\"';
-        console.log('📱 SETTINGS MODE: Scrolling enabled');
-      }
     }
     
     document.addEventListener('DOMContentLoaded', function() {
-      // Show mobile controls if on mobile
+      // Show mobile banner and setup auto-scroll
       if (window.innerWidth <= 768) {
         const mobileTest = document.querySelector('.mobile-test');
+        const mobileReturn = document.querySelector('.mobile-return');
         mobileTest.style.display = 'block';
+        mobileReturn.style.display = 'block';
         
-        // Start in play mode for better UX
-        setTimeout(() => toggleMobileMode('play'), 500);
+        // Setup auto-scroll listeners
+        setTimeout(() => addAutoScrollListeners(), 1000);
         
-        // Add mode switching to game status
+        // Update game status
         const gameStatus = document.getElementById('gameStatus');
-        gameStatus.innerHTML = '🎮 <strong>PLAY MODE</strong> - Tap "⚙️ Settings" to adjust options';
+        gameStatus.innerHTML = '📱 <strong>Mobile Mode:</strong> Scroll down for settings - auto-returns to board after changes';
+        
+        console.log('📱 Mobile auto-scroll system ready');
       }
     });
   </script>
