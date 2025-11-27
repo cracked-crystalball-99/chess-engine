@@ -404,6 +404,46 @@
         -webkit-transform: translate3d(0, 0, 0);
         transform: translate3d(0, 0, 0);
       }
+      
+      /* Mobile Play Mode Styles */
+      .app {
+        transition: all 0.3s ease;
+      }
+      
+      body.play-mode {
+        height: 100vh !important;
+        overflow: hidden !important;
+        position: fixed !important;
+      }
+      
+      body.play-mode .app {
+        height: 100vh !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: center !important;
+        padding-bottom: 10px !important;
+      }
+      
+      body.play-mode .game-container {
+        margin-bottom: 5px !important;
+      }
+      
+      body.play-mode .controls-section {
+        max-height: 120px !important;
+        overflow: hidden !important;
+        padding: 8px !important;
+      }
+      
+      body.play-mode .analysis-section {
+        display: none !important;
+      }
+      
+      /* Settings mode - allow full scrolling */
+      body.settings-mode {
+        overflow-y: auto !important;
+        position: relative !important;
+        height: auto !important;
+      }
     }
     
     /* Loading animation */
@@ -501,7 +541,13 @@
           📱 Tap a piece to select, then tap destination to move
         </div>
         
-        <div class="mobile-test" style="background: red; color: white; padding: 10px; margin: 10px 0; display: none; font-weight: bold; text-align: center; border: 2px solid darkred;">📱 MOBILE SCROLLING ENABLED 📱 <br>↓ Settings & Controls Below ↓</div>
+        <div class="mobile-test" style="background: #007bff; color: white; padding: 8px; margin: 8px 0; display: none; font-weight: bold; text-align: center; border: 2px solid #0056b3; border-radius: 8px; font-size: 0.85rem;">
+          📱 <span id="mobileMode">MOBILE MODE ACTIVE</span> 📱
+          <div style="margin-top: 5px;">
+            <button onclick="toggleMobileMode('play')" style="background: #28a745; color: white; border: none; padding: 4px 8px; margin: 0 2px; border-radius: 4px; font-size: 0.75rem;">🎮 Play Mode</button>
+            <button onclick="toggleMobileMode('settings')" style="background: #ffc107; color: black; border: none; padding: 4px 8px; margin: 0 2px; border-radius: 4px; font-size: 0.75rem;">⚙️ Settings</button>
+          </div>
+        </div>
         
         <div class="controls-grid">
           <div class="control-group">
@@ -609,32 +655,56 @@
       return allLoaded;
     }
     
-    // iOS Scroll Diagnostics and Mobile Setup
-    document.addEventListener('DOMContentLoaded', function() {
-      // Show mobile test banner
-      const mobileTest = document.querySelector('.mobile-test');
-      if (window.innerWidth <= 768) {
-        mobileTest.style.display = 'block';
+    // Mobile Play Mode System
+    let isMobilePlayMode = false;
+    let isSettingsMode = false;
+    
+    function toggleMobileMode(mode) {
+      const body = document.body;
+      const modeIndicator = document.getElementById('mobileMode');
+      const gameStatus = document.getElementById('gameStatus');
+      
+      // Remove existing mode classes
+      body.classList.remove('play-mode', 'settings-mode');
+      
+      if (mode === 'play') {
+        // Lock for gameplay - center board, prevent scroll
+        isMobilePlayMode = true;
+        isSettingsMode = false;
+        body.classList.add('play-mode');
+        window.scrollTo(0, 0); // Scroll to top
+        
+        // Update UI indicators
+        modeIndicator.textContent = '🎮 PLAY MODE - Board Locked';
+        gameStatus.innerHTML = '🎮 <strong>PLAY MODE</strong> - Tap \"⚙️ Settings\" to adjust options';
+        console.log('📱 PLAY MODE: Board locked, scrolling disabled');
+        
+      } else if (mode === 'settings') {
+        // Allow scrolling for settings access
+        isMobilePlayMode = false;
+        isSettingsMode = true;
+        body.classList.add('settings-mode');
+        
+        // Update UI indicators  
+        modeIndicator.textContent = '⚙️ SETTINGS MODE - Can Scroll';
+        gameStatus.innerHTML = '⚙️ <strong>SETTINGS MODE</strong> - Scroll to access all options, then tap \"🎮 Play Mode\"';
+        console.log('📱 SETTINGS MODE: Scrolling enabled');
       }
-      
-      // Scroll diagnostics for iOS
-      console.log('📱 SCROLL DIAGNOSTICS:');
-      console.log('- Window dimensions:', window.innerWidth, 'x', window.innerHeight);
-      console.log('- Document height:', document.documentElement.scrollHeight);
-      console.log('- Body height:', document.body.scrollHeight);
-      console.log('- Viewport height:', window.innerHeight);
-      console.log('- Can scroll:', document.documentElement.scrollHeight > window.innerHeight);
-      
-      // Test scroll functionality
-      setTimeout(() => {
-        console.log('🧪 SCROLL TEST: Attempting programmatic scroll to bottom...');
-        window.scrollTo(0, document.body.scrollHeight);
-        setTimeout(() => {
-          console.log('- Current scroll position:', window.pageYOffset);
-          console.log('- Max scroll position:', document.documentElement.scrollHeight - window.innerHeight);
-          console.log('- Scroll successful:', window.pageYOffset > 100);
-        }, 500);
-      }, 1000);
+    }
+    
+    document.addEventListener('DOMContentLoaded', function() {
+      // Show mobile controls if on mobile
+      if (window.innerWidth <= 768) {
+        const mobileTest = document.querySelector('.mobile-test');
+        mobileTest.style.display = 'block';
+        
+        // Start in play mode for better UX
+        setTimeout(() => toggleMobileMode('play'), 500);
+        
+        // Add mode switching to game status
+        const gameStatus = document.getElementById('gameStatus');
+        gameStatus.innerHTML = '🎮 <strong>PLAY MODE</strong> - Tap "⚙️ Settings" to adjust options';
+      }
     });
   </script>
   <script src="main.js"></script>
