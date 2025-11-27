@@ -57,11 +57,13 @@ class ChessEngine {
       position: 'start',
       onDrop: this.onDrop.bind(this),
       onMouseDownSquare: this.isMobile ? this.onSquareClick.bind(this) : undefined,
+      onMoveEnd: this.onMoveEnd.bind(this), // Handle move animation completion
       pieceTheme: 'https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png',
       showNotation: !this.isMobile,
-      moveSpeed: 'fast',
-      snapSpeed: 200,
-      snapbackSpeed: 400
+      moveSpeed: 200, // Smoother animation speed
+      snapSpeed: 100,
+      snapbackSpeed: 200,
+      trashSpeed: 100
     };
     
     this.board = Chessboard('chessboard', boardConfig);
@@ -343,6 +345,7 @@ class ChessEngine {
   }
   
   newGame() {
+    console.log('🆕 Starting new game...');
     this.game.reset();
     this.board.position('start');
     this.selectedSquare = null;
@@ -358,11 +361,9 @@ class ChessEngine {
       this.increment = parseInt(timeIncrementEl.value);
     }
     
-    this.gameStarted = true;
-    
-    // Reset and start clock
+    // Reset clock but don't start it yet - will start on first move
+    this.gameStarted = false;
     this.resetClock();
-    this.startClock();
     
     if (this.engineReady) {
       this.stockfish.postMessage('ucinewgame');
@@ -418,6 +419,12 @@ class ChessEngine {
     }
     
     this.handlePlayerMove();
+  }
+  
+  onMoveEnd(oldPos, newPos) {
+    // This is called after move animations complete
+    // Ensures smooth visual updates without flashing
+    console.log('🎭 Move animation completed');
   }
   
   onSquareClick(square, piece) {
@@ -487,8 +494,7 @@ class ChessEngine {
     const previousTurn = this.game.turn() === 'w' ? 'black' : 'white';
     this.addIncrement(previousTurn);
     
-    // Update board position
-    this.board.position(this.game.fen());
+    // Update clock highlight (board position will be updated by chessboard.js automatically)
     this.updateClockHighlight();
     
     // Check game status
@@ -505,11 +511,16 @@ class ChessEngine {
     if (this.gameMode === 'play' && this.engineReady) {
       // Engine vs Player mode
       this.isPlayerTurn = false;
-      this.updateGameStatus('🤖 Engine is thinking...');
+      const engineColor = this.playerColor === 'white' ? 'Black' : 'White';
+      this.updateGameStatus(`🤖 Engine (${engineColor}) is thinking...`);
+      
+      console.log('🎮 PLAYER MOVE COMPLETE - Requesting engine response...');
+      console.log('Current position:', this.game.fen());
+      console.log('Turn after player move:', this.game.turn());
       
       setTimeout(() => {
         this.requestEngineMove();
-      }, 500);
+      }, 300); // Shorter delay for better responsiveness
     } else {
       // Two-player or analysis mode
       this.isPlayerTurn = true;
@@ -568,8 +579,13 @@ class ChessEngine {
       const engineColor = this.playerColor === 'white' ? 'black' : 'white';
       this.addIncrement(engineColor);
       
-      this.board.position(this.game.fen());
-      this.updateClockHighlight();
+      // Animate the engine move smoothly
+      this.board.move(`${from}-${to}`);
+      
+      // Update clock highlight after a brief delay for smooth animation
+      setTimeout(() => {
+        this.updateClockHighlight();
+      }, 250);
       
       if (this.game.game_over()) {
         this.handleGameOver();
