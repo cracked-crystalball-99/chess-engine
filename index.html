@@ -621,32 +621,7 @@
       return allLoaded;
     }
     
-    // Mobile Play Mode System
-    let isMobilePlayMode = false;
-    let isSettingsMode = false;
-    
-    function toggleMobileMode(mode) {
-      const body = document.body;
-      const modeIndicator = document.getElementById('mobileMode');
-      const gameStatus = document.getElementById('gameStatus');
-      
-      // Remove existing mode classes
-      body.classList.remove('play-mode', 'settings-mode');
-      
-      if (mode === 'play') {
-        // Lock for gameplay - center board, prevent scroll
-        isMobilePlayMode = true;
-        isSettingsMode = false;
-        body.classList.add('play-mode');
-        window.scrollTo(0, 0); // Scroll to top
-        
-        // Update UI indicators
-        modeIndicator.textContent = '🎮 PLAY MODE - Board Locked';
-        gameStatus.innerHTML = '🎮 <strong>PLAY MODE</strong> - Tap \"⚙️ Settings\" to adjust options';
-        console.log('📱 PLAY MODE: Board locked, scrolling disabled');
-        
-      } else if (mode === 'settings') {
-    }
+
     
     document.addEventListener('DOMContentLoaded', function() {
       // Show mobile banner and setup auto-scroll
