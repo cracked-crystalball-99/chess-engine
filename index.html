@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
   <title>Stockfish Lite 17.1 - Mobile Chess</title>
   <style>
     * {
@@ -14,22 +14,21 @@
     html, body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      min-height: 100vh;
       height: auto;
       overflow-x: hidden;
-      overflow-y: auto;
+      overflow-y: scroll;
       -webkit-text-size-adjust: 100%;
       -webkit-overflow-scrolling: touch;
     }
     
     .app {
-      min-height: 100vh;
       height: auto;
       display: flex;
       flex-direction: column;
       padding: 10px;
       max-width: 500px;
       margin: 0 auto;
+      padding-bottom: 20px;
     }
     
     .header {
@@ -53,14 +52,12 @@
     }
     
     .game-container {
-      flex: 1;
       display: flex;
       flex-direction: column;
       background: white;
       border-radius: 20px;
       box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-      overflow: hidden;
-      min-height: 0;
+      overflow: visible;
     }
     
     .board-section {
@@ -378,6 +375,15 @@
         height: auto;
         max-height: none;
         overflow: visible;
+        margin-bottom: 30px;
+      }
+      
+      .app {
+        padding-bottom: 40px !important;
+      }
+      
+      body {
+        padding-bottom: 20px !important;
       }
     }
     
@@ -476,7 +482,7 @@
           📱 Tap a piece to select, then tap destination to move
         </div>
         
-        <div class="mobile-test" style="background: red; color: white; padding: 10px; margin: 10px 0; display: none; font-weight: bold; text-align: center; border: 2px solid darkred;">📱 MOBILE CSS ACTIVE 📱</div>
+        <div class="mobile-test" style="background: red; color: white; padding: 10px; margin: 10px 0; display: none; font-weight: bold; text-align: center; border: 2px solid darkred;">📱 MOBILE SCROLLING ENABLED 📱 <br>↓ Settings & Controls Below ↓</div>
         
         <div class="controls-grid">
           <div class="control-group">
