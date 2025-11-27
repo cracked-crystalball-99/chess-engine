@@ -160,10 +160,15 @@ class ChessEngine {
       this.updateEngineStatus('Ready', true);
       this.setSkillLevel();
       this.stockfish.postMessage('ucinewgame');
+      console.log('🤖 Engine initialized and ready');
     } else if (message.startsWith('bestmove')) {
       const move = message.split(' ')[1];
+      console.log('🤖 Engine suggested move:', move, 'isPlayerTurn:', this.isPlayerTurn);
       if (move && move !== '(none)' && !this.isPlayerTurn) {
         this.makeEngineMove(move);
+      } else if (move === '(none)') {
+        console.log('🤖 Engine has no moves - game over');
+        this.handleGameOver();
       }
     } else if (message.startsWith('info') && message.includes('pv')) {
       this.updateAnalysis(message);
@@ -307,12 +312,28 @@ class ChessEngine {
     const colorText = this.playerColor === 'white' ? 'White' : 'Black';
     this.updateGameStatus(`🔄 Playing as ${colorText}`);
     
+    // Debug logging
+    console.log('🔄 FLIP DEBUG:', {
+      playerColor: this.playerColor,
+      currentTurn: this.game.turn(),
+      gameMode: this.gameMode,
+      engineReady: this.engineReady,
+      gameStarted: this.gameStarted
+    });
+    
     // If we're now playing as black and it's a new game (white's turn), engine should move first
     if (this.playerColor === 'black' && this.game.turn() === 'w' && this.gameMode === 'play' && this.engineReady) {
       this.isPlayerTurn = false;
       this.updateGameStatus('🤖 Engine (White) is thinking...');
       
+      // Start the clock if not already started
+      if (!this.gameStarted) {
+        this.gameStarted = true;
+        this.startClock();
+      }
+      
       setTimeout(() => {
+        console.log('🤖 Requesting engine move after flip...');
         this.requestEngineMove();
       }, 500);
     } else if (this.playerColor === 'white' && this.game.turn() === 'w') {
@@ -506,15 +527,25 @@ class ChessEngine {
   }
   
   requestEngineMove() {
-    if (!this.engineReady) return;
+    if (!this.engineReady) {
+      console.log('❌ Engine not ready for move request');
+      return;
+    }
+    
+    if (this.isPlayerTurn) {
+      console.log('❌ Trying to request engine move during player turn');
+      return;
+    }
     
     const fen = this.game.fen();
+    console.log('🤖 Requesting engine move for position:', fen);
     this.stockfish.postMessage(`position fen ${fen}`);
     
     const skillLevelEl = document.getElementById('skillLevel');
     const skillLevel = skillLevelEl ? parseInt(skillLevelEl.value) : 5;
     const depth = Math.max(3, Math.min(15, skillLevel));
     
+    console.log('🤖 Engine thinking at depth:', depth, 'skill level:', skillLevel);
     this.stockfish.postMessage(`go depth ${depth}`);
   }
   

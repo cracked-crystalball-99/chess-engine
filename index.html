@@ -621,8 +621,72 @@
       return allLoaded;
     }
     
-
+    // Smart Auto-Scroll System for Mobile
+    function scrollToBoard() {
+      // Smoothly scroll back to the board for gameplay
+      const boardSection = document.querySelector('.board-section');
+      if (boardSection && window.innerWidth <= 768) {
+        boardSection.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'start',
+          inline: 'nearest'
+        });
+        console.log('📱 AUTO-SCROLL: Returned to board for gameplay');
+      }
+    }
     
+    function addAutoScrollListeners() {
+      // Auto-scroll back to board after settings changes
+      const selects = document.querySelectorAll('select');
+      const buttons = document.querySelectorAll('.btn');
+      
+      selects.forEach(select => {
+        select.addEventListener('change', () => {
+          setTimeout(() => scrollToBoard(), 800); // Small delay for user to see change
+        });
+      });
+      
+      buttons.forEach(button => {
+        if (!button.textContent.includes('Return to Board')) {
+          button.addEventListener('click', () => {
+            setTimeout(() => scrollToBoard(), 600);
+          });
+        }
+      });
+    }
+    
+    // Prevent scrolling during active chess gameplay
+    let gameplayScrollLock = false;
+    
+    function enableGameplayScrollLock() {
+      gameplayScrollLock = true;
+      const chessboard = document.getElementById('chessboard');
+      
+      if (chessboard) {
+        chessboard.addEventListener('touchstart', preventGameplayScroll, { passive: false });
+        chessboard.addEventListener('touchmove', preventGameplayScroll, { passive: false });
+        
+        // Also lock scroll for the entire board section during active interaction
+        const boardSection = document.querySelector('.board-section');
+        if (boardSection) {
+          boardSection.addEventListener('touchstart', preventGameplayScroll, { passive: false });
+          boardSection.addEventListener('touchmove', preventGameplayScroll, { passive: false });
+        }
+      }
+    }
+    
+    function preventGameplayScroll(e) {
+      if (gameplayScrollLock) {
+        e.preventDefault();
+        e.stopPropagation();
+        return false;
+      }
+    }
+    
+    function disableGameplayScrollLock() {
+      gameplayScrollLock = false;
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
       // Show mobile banner and setup auto-scroll
       if (window.innerWidth <= 768) {
@@ -634,11 +698,14 @@
         // Setup auto-scroll listeners
         setTimeout(() => addAutoScrollListeners(), 1000);
         
+        // Enable gameplay scroll lock for board area
+        setTimeout(() => enableGameplayScrollLock(), 1500);
+        
         // Update game status
         const gameStatus = document.getElementById('gameStatus');
-        gameStatus.innerHTML = '📱 <strong>Mobile Mode:</strong> Scroll down for settings - auto-returns to board after changes';
+        gameStatus.innerHTML = '📱 <strong>Mobile Mode:</strong> Board locked during play - scroll for settings, auto-returns after changes';
         
-        console.log('📱 Mobile auto-scroll system ready');
+        console.log('📱 Mobile system ready: auto-scroll + gameplay scroll lock');
       }
     });
   </script>
