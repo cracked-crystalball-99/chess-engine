@@ -57,13 +57,11 @@ class ChessEngine {
       position: 'start',
       onDrop: this.onDrop.bind(this),
       onMouseDownSquare: this.isMobile ? this.onSquareClick.bind(this) : undefined,
-      onMoveEnd: this.onMoveEnd.bind(this), // Handle move animation completion
       pieceTheme: 'https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png',
       showNotation: !this.isMobile,
-      moveSpeed: 200, // Smoother animation speed
-      snapSpeed: 100,
-      snapbackSpeed: 200,
-      trashSpeed: 100
+      moveSpeed: 'fast',
+      snapSpeed: 200,
+      snapbackSpeed: 400
     };
     
     this.board = Chessboard('chessboard', boardConfig);
@@ -361,9 +359,11 @@ class ChessEngine {
       this.increment = parseInt(timeIncrementEl.value);
     }
     
-    // Reset clock but don't start it yet - will start on first move
-    this.gameStarted = false;
+    this.gameStarted = true;
+    
+    // Reset and start clock
     this.resetClock();
+    this.startClock();
     
     if (this.engineReady) {
       this.stockfish.postMessage('ucinewgame');
@@ -419,12 +419,6 @@ class ChessEngine {
     }
     
     this.handlePlayerMove();
-  }
-  
-  onMoveEnd(oldPos, newPos) {
-    // This is called after move animations complete
-    // Ensures smooth visual updates without flashing
-    console.log('🎭 Move animation completed');
   }
   
   onSquareClick(square, piece) {
@@ -494,7 +488,8 @@ class ChessEngine {
     const previousTurn = this.game.turn() === 'w' ? 'black' : 'white';
     this.addIncrement(previousTurn);
     
-    // Update clock highlight (board position will be updated by chessboard.js automatically)
+    // Update board position and clock highlight
+    this.board.position(this.game.fen());
     this.updateClockHighlight();
     
     // Check game status
@@ -579,13 +574,8 @@ class ChessEngine {
       const engineColor = this.playerColor === 'white' ? 'black' : 'white';
       this.addIncrement(engineColor);
       
-      // Animate the engine move smoothly
-      this.board.move(`${from}-${to}`);
-      
-      // Update clock highlight after a brief delay for smooth animation
-      setTimeout(() => {
-        this.updateClockHighlight();
-      }, 250);
+      this.board.position(this.game.fen());
+      this.updateClockHighlight();
       
       if (this.game.game_over()) {
         this.handleGameOver();
